@@ -1,155 +1,51 @@
-# Django Deploy
+Step 1: Update and Install Prerequisites
 
-Aplicação Django completa com Docker, PostgreSQL, RabbitMQ e Celery.
-
-## 🚀 Deploy no Docker Hub
-
-### Pré-requisitos
-
-1. **Conta no Docker Hub**: [docker.com](https://hub.docker.com)
-2. **Docker instalado** em sua máquina
-3. **Conta logada**: `docker login`
-
-### 📦 Build e Push da Imagem
-
-#### Opção 1: Usando o script automático
-
+Update your package lists and install necessary packages to allow apt to use a repository over HTTPS.
 ```bash
-# Build da imagem
-./build-and-push.sh
-
-# Ou com tag específica
-./build-and-push.sh v1.0.0
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
 ```
 
-#### Opção 2: Comandos manuais
+Step 2: Add Docker's Official GPG Key
 
+Add Docker's official GPG key to verify the downloaded packages.
 ```bash
-# 1. Build da imagem
-docker build -t djangodeploy:latest .
-
-# 2. Login no Docker Hub
-docker login
-
-# 3. Tag da imagem (substitua SEU_USERNAME)
-docker tag djangodeploy:latest SEU_USERNAME/djangodeploy:latest
-
-# 4. Push para Docker Hub
-docker push SEU_USERNAME/djangodeploy:latest
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 ```
 
-### 🏃‍♂️ Como usar a imagem
+Step 3: Set up the Docker Repository
 
-#### Com Docker Compose (Recomendado)
-
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  web:
-    image: SEU_USERNAME/djangodeploy:latest
-    ports:
-      - "8000:8000"
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings
-      - SECRET_KEY=sua-secret-key-aqui
-      - DEBUG=False
-      - DB_HOST=db
-      - DB_NAME=myproject
-      - DB_USER=myprojectuser
-      - DB_PASSWORD=password
-    depends_on:
-      - db
-      - broker
-
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_DB=myproject
-      - POSTGRES_USER=myprojectuser
-      - POSTGRES_PASSWORD=password
-
-  broker:
-    image: rabbitmq:3.13-management-alpine
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
-```
-
-#### Apenas com Docker
-
+Add the Docker stable repository to your APT sources. This uses the codename of your specific Ubuntu version (like jammy, focal, etc.) to get the correct package list.
 ```bash
-# Rodar apenas a aplicação (sem banco)
-docker run -p 8000:8000 \
-  -e SECRET_KEY=sua-secret-key \
-  -e DEBUG=False \
-  SEU_USERNAME/djangodeploy:latest
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 ```
 
-### 🔧 Configurações de Ambiente
+Step 4: Install Docker Engine and Docker Compose V2
 
-| Variável | Descrição | Padrão |
-|----------|-----------|---------|
-| `SECRET_KEY` | Chave secreta do Django | (obrigatório) |
-| `DEBUG` | Modo debug | `False` |
-| `ALLOWED_HOSTS` | Hosts permitidos | `*` |
-| `DB_HOST` | Host do banco | `localhost` |
-| `DB_NAME` | Nome do banco | `myproject` |
-| `DB_USER` | Usuário do banco | `myprojectuser` |
-| `DB_PASSWORD` | Senha do banco | `password` |
-| `CELERY_BROKER_URL` | URL do broker Celery | `amqp://guest:guest@localhost:5672//` |
-
-### 📋 Funcionalidades
-
-- ✅ **Django 5.2** com Gunicorn
-- ✅ **PostgreSQL** como banco de dados
-- ✅ **RabbitMQ** como message broker
-- ✅ **Celery** para tarefas assíncronas
-- ✅ **Nginx** como proxy reverso
-- ✅ **Arquivos estáticos** servidos pelo Nginx
-- ✅ **Multi-stage build** otimizado
-- ✅ **UV** para gerenciamento de dependências
-
-### 🏗️ Arquitetura
-
-```
-┌─────────────────┐    ┌─────────────────┐
-│   Nginx (80)    │────│  Gunicorn (8000)│
-│                 │    │                 │
-│ - Static Files  │    │ - Django App    │
-│ - Proxy Reverse │    └─────────────────┘
-└─────────────────┘             │
-                                │
-                    ┌─────────────────┐
-                    │   PostgreSQL    │
-                    │   (5432)        │
-                    └─────────────────┘
-                                │
-                    ┌─────────────────┐
-                    │   RabbitMQ      │
-                    │   (5672/15672)  │
-                    └─────────────────┘
-                                │
-                    ┌─────────────────┐
-                    │   Celery Worker │
-                    │                 │
-                    └─────────────────┘
+Update your package list again to pull the Docker packages, then install the core components and the Docker Compose plugin.
+```bash
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 ```
 
-### 🔒 Segurança
+Step 5: Verify the Installation
 
-- Usuário não-root no container
-- Imagem slim do Python
-- Apenas dependências de runtime
-- Cache do UV isolado
+Check the versions to confirm everything is installed correctly:
+```bash
+docker --version
+docker compose version
+```
 
-### 📊 Otimizações
+You should see output confirming both the Docker Engine and the Docker Compose V2 plugin are installed.
 
-- **Multi-stage build**: Imagem final menor
-- **UV**: Instalação rápida de dependências
-- **.dockerignore**: Build mais eficiente
-- **Cache layers**: Builds incrementais
+Step 6: Configure Non-Root User Access (Crucial EC2 Step)
 
----
+The initial errors you had were due to permission denied issues. You must add the EC2 user (usually ubuntu) to the docker group to run commands without sudo.
 
-**📝 Nota**: Substitua `SEU_USERNAME` pelo seu nome de usuário do Docker Hub.
+  Add your user to the docker group:
+  ```bash
+  sudo usermod -aG docker $USER
+  ```
