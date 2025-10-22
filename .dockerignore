@@ -1,0 +1,56 @@
+# Arquivos Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Arquivos de desenvolvimento
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Documentação
+README.md
+docs/
+
+# Testes
+tests/
+.pytest_cache/
+
+# Cobertura
+.coverage
+htmlcov/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Volumes Docker (não precisam ser enviados)
+static/
+media/
+
+# Cache do uv
+.root/.cache/uv
