@@ -152,6 +152,7 @@ services:
     volumes:
       # Copia o arquivo de configuração local (crie este arquivo!)
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/build:/usr/share/nginx/html:ro
       # Mapeia o diretório de arquivos estáticos e de mídia do Django para o Nginx
       - static_volume:/app/static
       - media_volume:/app/media
