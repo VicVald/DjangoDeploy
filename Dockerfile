@@ -1,4 +1,15 @@
 # ----------------------------------------------------------------------
+# ESTÁGIO 0: FRONTEND BUILDER (Build React app)
+# ----------------------------------------------------------------------
+FROM node:18-alpine as frontend-builder
+
+WORKDIR /frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ .
+RUN npm run build
+
+# ----------------------------------------------------------------------
 # ESTÁGIO 1: BUILDER (Instala dependências do OS e Python)
 # Objetivo: Criar o Venv e coletar estáticos como root (com ferramentas)
 # ----------------------------------------------------------------------
@@ -59,6 +70,9 @@ COPY --from=builder /usr/local/bin/uvx /usr/local/bin/uvx
 # 3. Copia o venv e o código da app do estágio 'builder' (ainda como root)
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app /app
+
+# 3.1. Copia o frontend build do estágio frontend-builder
+COPY --from=frontend-builder /frontend/build /app/frontend/build
 
 # 4. CRIAÇÃO E CONFIGURAÇÃO DE USUÁRIO (CORRIGIDO)
 #    --create-home: Permite que o usuário tenha um local de trabalho, resolvendo o erro 13.
